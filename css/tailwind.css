@@ -4,10 +4,43 @@
 @source '../node_modules/pliny';
 @custom-variant dark (&:where(.dark, .dark *));
 
+@font-face {
+  font-family: 'NanumSquareAC';
+  src: url('/static/fonts/NanumFontSetup_OTF_SQUARE/NanumSquareOTF_acL.otf') format('opentype');
+  font-weight: 300; /* Light */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NanumSquareAC';
+  src: url('/static/fonts/NanumFontSetup_OTF_SQUARE/NanumSquareOTF_acR.otf') format('opentype');
+  font-weight: 400; /* Regular */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NanumSquareAC';
+  src: url('/static/fonts/NanumFontSetup_OTF_SQUARE/NanumSquareOTF_acB.otf') format('opentype');
+  font-weight: 700; /* Bold */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NanumSquareAC';
+  src: url('/static/fonts/NanumFontSetup_OTF_SQUARE/NanumSquareOTF_acEB.otf') format('opentype');
+  font-weight: 800; /* Extra Bold */
+  font-style: normal;
+}
+
+
+
 /* Core theme configuration */
 @theme {
   /* Font families */
-  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+  --font-sans: 
+    /* var(--font-space-grotesk), */
+    'NanumSquareAC',
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
   /* Colors */

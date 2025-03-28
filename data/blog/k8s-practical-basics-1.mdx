@@ -1,0 +1,94 @@
+---
+title: 'Kubernetes 실전 기본 개념 - 1️⃣ 정의 / 구성요소'
+date: '2025-03-27'
+lastmod: '2025-03-28'
+tags: ['kubernetes', 'study']
+draft: false
+summary: 'Kubernetes 기본 개념'
+---
+
+## Backgroud
+
+• Kubernetes 는 수도 없이 설계/구축/운영을 지겹도록 해왔지만 정리를 한 적은 단 한번도 없음  
+• 기초부터 심화까지 정리하기 위해 작성하게 되었음  
+• Kubernetes 기본 구조부터 알아보겠음
+
+<TOCInline toc={props.toc} exclude="Backgroud" />
+
+## Kubernetes 란?
+
+Kubernetes는 컨테이너 오케스트라레이션 도구로 보통 정의를 해  
+컨테이너화된 애플리케이션을 자동으로 배포 / 확장 / 운영하는 오픈소스 오케스트레이션 플랫폼이지  
+(Kubernetes 를 컨테이너를 이해해야 하는데 저 먼 과거부터 거슬러 올라가야해.. 일단 가성비로 이해하기로 하자..)
+
+왜 쿠버네티스가 필요할까 ?
+
+기존의 서버 운영 방식에서는 애플리케이션을 배포하고 관리하는 과정이 복잡했어  
+특히, 다음과 같은 문제가 있었지  
+ • 애플리케이션 확장 문제: 사용량이 늘어나면 수동으로 서버 추가
+ • 고가용성 유지 어려움: 특정 서버가 다운되면 애플리케이션도 중단
+ • 배포 및 롤백의 어려움: 새 버전을 배포할 때 기존 서비스를 중단하지 않고 업데이트 어려움
+
+이를 해결하기 위해 등장한 것이 <u>**컨테이너(Container)**</u>이고,  
+컨테이너를 효과적으로 관리하기 위해 나온 게 바로 <u>**Kubernetes(K8S)**</u>야🥑
+
+✅ 컨테이너 오케스트레이션: 컨테이너 여러 개를 효과적으로 관리  
+✅ 자동 배포 및 롤백: 새로운 버전을 안전하게 배포하고 롤백  
+✅ 서비스 디스커버리 및 로드 밸런싱: 네트워크 요청을 적절히 분배  
+✅ 자동 확장(Scaling): 트래픽 증가 시 자동으로 인프라 확장  
+✅ 자기 치유(Self-Healing): 장애가 발생한 컨테이너를 자동 복구  
+
+(이제는 Kubernetes를 K8S로 줄여서 설명할게🍑)
+
+## K8S 용어 정리
+
+| 구성요소 | 기본개념 |
+|--------|--------|
+| 노드(Node) | • K8S 클러스터 구성 서버 단위<br/>• 마스터 노드(Control Plane): 클러스터 관리 / 스케줄링<br/>• 워크 노드(Worker Node): 실제 APP 컨테이너 실행 서버 |
+| 파드(Pod) | • K8S 컨테이너 실행 최소 단위<br/>• 하나의 파드 내 하나 이상의 컨테이너 포함 가능<br/>• 같은 파드 내 컨테이너는 네트워크 / 볼륨 공유 |
+| 디플로이먼트(Deployment) | • APP 배포 / 관리 컨트롤러<br/>• 원하는 개수의 파드를 유지하면서 업데이트 / 롤백 수행 |
+| 서비스(Service) | • 파드 변경 시 항상 일정한 네트워크 엔드포인트 제공<br/>• 로드 밸런싱 제공<br/>• 클러스터 내부용 ClusterIP / 외부 접근용 NodePort·LoadBalancer 타입 존재 |
+| 인그레스(Ingress) | • HTTP(S) 트래픽 관리 API 오브젝트<br/>• 외부에서 서비스 내 접근 경로 설정<br/>• 로드 밸런서 통한 트래픽을 특정 서비스로 전달 |
+| 컨피그맵(ConfigMap) & 시크릿(Secret) | • APP 설정값 관리 오브젝트<br/>• ConfigMap: 일반 설정 데이터 저장<br/>• Secret: 비밀번호 / API 키 등 민감한 데이터 저장 |
+| 네임스페이스(Namespace) | • 여러 팀이나 프로젝트가 하나의 클러스터를 공유할 때 논리적 격리 단위<br/>• 기본적으로 default / kube-system / kube-public 네임스페이스 존재 |
+| 볼륨(Volume) | • 파드 내 컨테이너들이 데이터를 공유할 수 있도록 저장소 제공<br/>• emptyDir, hostPath, PersistentVolume(PV), PersistentVolumeClaim(PVC) 등 다양한 타입 존재 |
+
+## K8S 기본 구조
+
+![k8s-architecture-2](/static/images/k8s-architecture-2.png)
+![k8s-architecture-1](/static/images/k8s-architecture-1.png)
+
+K8S 클러스터에서 <u>**컨트롤 플레인(Control Plane)**</u>과 <u>**데이터 플레인(Data Plane)**</u>은 클러스터의 구조와 동작을 이해하는 핵심 개념이야 🥑
+
+• 컨트롤 플레인(Control Plane)  
+  -> K8S 클러스터의 "뇌" 역할이며 클러스터의 상태를 관리 / 워크로드를 스케줄링 / 시스템 전반의 조정
+
+• 컨트롤 플레인의 주요 컴포넌트
+| 구성요소 | 설명 |
+|--------|--------|
+| API 서버 (kube-apiserver) | • K8S 중심이며 클러스터 내 모든 요청 수신 및 인증 / 인가 수행 후, 요청을 적절한 컴포넌트로 전달 |
+| 컨트롤러 매니저 (kube-controller-manager) | • 다양한 컨트롤러(DeploymentController, NodeController, ReplicaSetController 등)를 실행하여 클러스터 상태를 원하는 상태로 유지 |
+| 스케줄러 (kube-scheduler) | • 신규 생성 Pod를 적절한 노드(Node) 내 배치<br/>• CPU / 메모리 등의 리소스 가용성을 고려, 최적의 노드 선택 |
+| ETCD | • 클러스터 모든 상태 정보를 저장하는 key-value 데이터 저장소<br/>• 분산 시스템에서 중요한 역할 |
+| 클라우드 컨트롤러 매니저 (cloud-controller-manager, *선택 사항*) | • 클라우드 서비스 제공업체(AWS, GCP, Azure 등)와 통합하여 로드 밸런서, 볼륨 관리 등 수행 |
+
+• 데이터 플레인은(Data Plane)  
+  -> APP 워크로드(Pod 및 컨테이너)가 실행되는 영역이며 즉, 컨트롤 플레인의 지시에 따라 리소스를 실행하고 관리하는 역할
+
+• 데이터 플레인의 주요 컴포넌트
+| 구성요소 | 설명 |
+|--------|--------|
+| Kubelet | • 컨트롤 플레인과 통신하며, 각 노드에서 컨테이너를 관리하고, Pod 상태를 주기적으로 보고 |
+| 컨테이너 런타임 (Container Runtime) | • 실제 컨테이너(Pod 내부의 컨테이너)를 실행하는 역할 (예: containerd, CRI-O, Docker 등) |
+| Kube Proxy | • K8S 서비스 네트워킹을 담당 / Pod 간 통신을 지원 / 네트워크 규칙 적용 |
+
+
+• 컨트롤 플레인(Control Plane) vs 데이터 플레인(Data Plane) 비교
+| 항목 | 컨트롤 플레인(Control Plane) | 데이터 플레인(Data Plane)
+|--------|--------|--------|
+| 역할 | • 클러스터 관리 및 오케스트레이션 | • 실제 워크로드(Pod) 실행 |
+| 주요 구성 요소 | • API Server<br/>• Scheduler<br/>• Controller Manager<br/>• etcd | • Kubelet<br/>• Kube Proxy<br/>• Container Runtime |
+| 실행 위치 | • 마스터 노드(제어 노드) | • 워커 노드(일반 노드) |
+| 데이터 저장소 | • etcd 사용 | • 실제 컨테이너 상태 유지 |
+
+K8S 실전 기본 개념 중 기본 구조에 대해 알아봤고 다음으로는 자주 쓰이는 각 구성요소에 대해 자세히 알아보려구 해 😊
