@@ -1,0 +1,163 @@
+---
+title: 'Kubernetes 실전 기본 개념 - 3️⃣ Deployment'
+date: '2025-03-27'
+lastmod: '2025-03-28'
+tags: ['kubernetes', 'study']
+draft: false
+summary: 'Kubernetes Deployment'
+---
+
+## Backgroud
+
+• Deployment는 가장 자주 쓰이는 리소스 중 하나로, 일정하게 파드를 유지하여 관리하도록 함   
+• 애플리케이션을 배포(Deploy)하고 관리(Manage)하며 업데이트(Update)하는 데 사용
+
+<TOCInline toc={props.toc} exclude="Backgroud" />
+
+## Kubernetes Deployment란 ?
+
+Kubernetes Deployment는 컨테이너 애플리케이션의 선언적 업데이트를 관리하는 Kubernetes 오브젝트야 !
+
+## 🧱 구성 요소
+Deployment는 주로 다음과 같은 역할을 함  
+✅ Pod 정의 및 Replica 수 설정  
+  ex) "nginx 컨테이너를 3개 실행시켜줘!"  
+  • 내부적으로는 ReplicaSet을 생성하고 관리  
+✅  Self-Healing  
+  • Pod가 죽으면 자동으로 재생성  
+  • Rolling Update 지원  
+  • 다운타임 없이 새로운 버전의 컨테이너 이미지로 교체 가능  
+✅  Rollback 기능  
+  • 문제가 생기면 이전 버전으로 되돌릴 수 있음  
+
+
+## 📝 예시 deployment.yamlAML
+
+```yaml:deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+```
+
+## 🚀 실제 사용 시나리오  
+✅ 새로운 애플리케이션을 배포할 때  
+✅ 기존 컨테이너 이미지를 업데이트할 때 (예: nginx:1.21 → nginx:1.22)  
+✅ 서비스 무중단 배포를 하고 싶을 때  
+
+
+## 📊 다른 오브젝트와 비교 (Deployment vs. ReplicaSet vs. StatefulSet vs. DaemonSet)  
+
+항목 | Deployment | ReplicaSet | StatefulSet | DaemonSet
+|--------|--------|--------|--------|--------|
+주 사용 대상 | Stateless 앱 | 내부 구성요소 | Stateful 앱 (DB 등) | 노드 단위 데몬
+고유한 Pod 이름 | ❌ | ❌ | ✅ (pod-0, pod-1) | ❌
+롤링 업데이트 | ✅ | ❌ | 일부 지원 | 제한적
+자동 복구 | ✅ | ✅ | ✅ | ✅
+순차적 배포 | ❌ | ❌ | ✅ | ✅
+직접 사용 여부 | 자주 사용 | 거의 안 함 | 특정 상황에 사용 | 시스템 관리 목적
+
+
+📝 예시 replicaset.yaml (보통은 직접 안 씀)
+
+```yaml:replicaset.yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+
+```
+※ 주의: 위 내용은 Deployment 없이 ReplicaSet만 사용한 예시, 특별한 이유 없으면 보통 Deployment 사용  
+
+📝 예시 statefulSet.yaml (상태 저장 서비스용)
+
+```yaml:replicaset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: "mysql"  # Headless 서비스 필요
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "password"
+        volumeMounts:
+        - name: mysql-pvc
+          mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-pvc
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gis
+```
+
+📝 예시 replicaset.yaml (Node별로 1개씩 실행)  
+
+```yaml:replicaset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+spec:
+  selector:
+    matchLabels:
+      name: node-exporter
+  template:
+    metadata:
+      labels:
+        name: node-exporter
+    spec:
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:latest
+        ports:
+        - containerPort: 9100
+
+```

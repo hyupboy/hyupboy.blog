@@ -2,7 +2,7 @@
 const siteMetadata = {
   title: 'Hyupboy Blog',
   author: 'hyupboy',
-  headerTitle: 'hyupboy.me',
+  headerTitle: 'hyupboy.zip',
   description: '',
   language: 'en-us',
   theme: 'system', // system, dark or light

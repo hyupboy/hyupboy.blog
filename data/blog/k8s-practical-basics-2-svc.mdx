@@ -1,0 +1,146 @@
+---
+title: 'Kubernetes 실전 기본 개념 - 2️⃣ Service'
+date: '2025-03-27'
+lastmod: '2025-03-28'
+tags: ['kubernetes', 'study']
+draft: false
+summary: 'Kubernetes Service'
+---
+
+## Backgroud
+
+• 파드에 접근할 수 있도록 진입점을 알려주는 서비스에 대해 알아볼거야  
+• K8S 클러스터 내에서 네트워크를 안정적으로 공급하기 위한 'SVC' 에 대해 알아보자 !  
+
+<TOCInline toc={props.toc} exclude="Backgroud" />
+
+## Kubernetes Service란 ?
+
+Kubernetes Service(K8S Service)는 동적으로 변하는 Pod에 대해 고정된 네트워크 접근 지점을 제공하는 추상화 객체  
+Pod의 생애주기와 무관하게 접근할 수 있는 고정된 IP와 DNS 이름을 제공하는 게 Service의 역할이야
+
+👉왜 쿠버네티스가 서비스가 필요할까 ?
+
+너가 nginx 웹 서버를 여러 개 Pod로 배포했다고 치자 🥑  
+이 Pod들은 레플리카셋(ReplicaSet)이나 디플로이먼트(Deployment)에 의해 자동으로 관리되고 있을거야  
+근데 이 Pod들의 IP는 계속 바뀜 → 클라이언트가 직접 접근 불가!  
+
+그래서 <u>**Kubernetes Service**</u>라는 개념이 나오게 된거야!  
+
+✅ 특정 라벨을 가진 Pod들에게 트래픽을 분산해서 보내줌 (Selector 기반)  
+✅ 고정 IP 제공 (ClusterIP 등)  
+✅ DNS 이름 제공 (my-service.my-namespace.svc.cluster.local)    
+✅ 외부에서 접근할 수 있는 창구도 만들어줌 (NodePort, LoadBalancer, Ingress와 함께)  
+
+## 📦 핵심 구성 요소
+
+| 구성요소 | 기본개념 |
+|--------|--------|
+| Selector | • 어떤 Pod들에 트래픽을 보낼지 결정하는 라벨 셀렉터 |
+| Port | • 외부(또는 클러스터 내)에서 열어줄 포트 |
+| TargetPort | • 실제 Pod이 열어놓은 컨테이너 포트 |
+| Type | • 서비스의 종류 (ClusterIP, NodePort, LoadBalancer, ExternalName) |
+
+
+• <u>**ClusterIP를 이용한 구성도**</u>  
+![k8s-architecture-2](/static/images/k8s-practical-basics-2-svc-img-1.png)
+
+## K8S SVC 기본 예제
+
+And here's how it looks - nicely colored with styled code titles!
+
+
+```yaml:svc-clusterip.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-web-service
+  labels:
+    app: web
+spec:
+  selector:
+    app: web  # 이 라벨을 가진 Pod들에 트래픽을 보냄
+  ports:
+    - protocol: TCP
+      port: 80         # 서비스가 노출할 포트 (클러스터 내에서 접근하는 포트)
+      targetPort: 8080 # 실제 Pod 컨테이너가 열어놓은 포트
+  type: ClusterIP       # 기본 타입, 클러스터 내부에서만 접근 가능
+```
+
+```yaml:deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 8080
+```
+| 항목 | 설명 |
+|--------|--------|
+| selector.app: web | • 이 라벨을 가진 Pod에게 트래픽 전달 |
+| port: 80 | • 클러스터 내에서 서비스가 열어놓는 포트 |
+| targetPort: 8080 | • 실제 컨테이너의 포트 (컨테이너 안에서 열어둔 포트) |
+| type: ClusterIP<br/> | • 기본 서비스 타입으로, 내부 통신 전용 |
+
+![k8s-practical-basics-2-svc-img-1](/static/images/k8s-practical-basics-2-svc-img-1.png)
+
+
+## K8S SVC 타입
+
+| 구분 | ClusterIP(기본값)| NodePort | LoadBalancer | ExternalName |
+|--------|--------|--------|--------|--------|
+| 접근 가능 범위 | • 클러스터 내부 | • 클러스터 외부 (NodeIP:Port) | • 클러스터 외부 (퍼블릭 Load Balancer IP) | • 클러스터 내부 |
+| 사용 목적 | • 내부 통신(서비스 간) | • 간단한 외부 노출 / 테스트 목적 | • 외부 사용자에게 서비스 제공 | • 외부 DNS 이름 참조 |
+| 외부 노출 | • ❌ 불가 | • ⭕ 가능 (노드 IP와 포트 이용) | • ⭕ 가능 (클라우드 제공 Load Balancer 사용) | • ❌ 직접 트래픽 전달 불가 |
+| 포트 설정 | • 내부 포트만 설정 | • 고정된 포트 범위 사용 (30000–32767) | • 자동 생성 or 지정 가능 | • 없음 (DNS만 사용)
+| 클라우드 의존성 | • 없음 | • 없음| • ⭕ 클라우드 환경 필요 (예: AWS ELB, GCP LB 등) | • 없음 |
+| 실제 트래픽 흐름 | • 직접 Pod로 라우팅 (Selector 사용) | NodePort → ClusterIP → Pod | LB → NodePort → ClusterIP → Pod | 클러스터 내부에서 DNS로 변환 |
+| 사용 예시 | • 마이크로서비스 간 통신, DB 서비스 등 | • 간단한 데모, 로컬 개발환경 외부 연결 등 | • 실서비스용 외부 API 제공, Web 서비스 등 | • 외부 서비스(MySQL, S3 등) 접근 시 |
+| 보안 측면 | • 안전 (외부 노출 없음) | • 포트가 노출되어 있으므로 보안 고려 필요 | • 퍼블릭 IP가 노출되므로 방화벽 등 추가 설정 필요 | • 단순한 DNS이므로 보안 영향 적음 |
+
+
+실제 구성하는 방식에서는 아래 흐름으로 구성을 많이 해  
+• [Ingress Controller + LoadBalancer Service] → [Kubernetes Service] → [Pod]
+
+여기에서 Kubernetes Service 는 ClusterIP를 많이 사용하고 가끔 NodePort 를 사용해
+<u>**가급적 포트 노출이 없고 노드를 통하지 않는 ClusterIP**</u>를 사용하고 지원이 안되는 부분(ex. Istio Ingressgateway)만 NodePort를 사용하면 돼
+
+(Istio Ingressgateway 구성 시에 ClusterIP가 지원이 안되는 지 모르고 삽질한 적이 있어 ㅠ 다른 Istio 구성페이지에서 얘기해줄게)
+
+🔁 전체 흐름 요약
+
+```
+[External Client]  
+      ↓  
+[Cloud Load Balancer]  ← (type: LoadBalancer Service, e.g., nginx-ingress-lb)  
+      ↓  
+[Ingress Controller]   ← (Pod로 배포됨, nginx/traefik 등)  
+      ↓  
+[Ingress Rule]         ← (host/path 기반 라우팅 설정)  
+      ↓  
+[Kubernetes Service]   ← (ClusterIP)  
+      ↓  
+[Pod]  
+```
+
+| 이유 | 설명 |
+|--------|--------|
+✅ 유연한 트래픽 분기|Ingress를 통해 도메인/경로별로 다양한 서비스로 라우팅 가능
+✅ 한 개의 LB로 여러|서비스 처리	비용 절감, 클라우드 리소스 절약
+✅ TLS/인증 등 중앙 제어|Ingress에서 TLS termination, 인증, rate limit 설정 등 가능
+✅ 확장성|서비스가 많아질수록 Ingress가 중심 허브 역할
+
+Ingress 에 대한 설명은 다른 페이지에서 설명할게 !
